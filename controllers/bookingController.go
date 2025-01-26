@@ -9,8 +9,8 @@ import (
 
 func BookSeat(c *fiber.Ctx) error {
 	type BookingInput struct {
-		UserID uint `json:"user_id"`
-		SeatID uint `json:"seat_id"`
+		UsersID uint `json:"user_id"`
+		SeatID  uint `json:"seat_id"`
 	}
 
 	var input BookingInput
@@ -32,7 +32,7 @@ func BookSeat(c *fiber.Ctx) error {
 	seat.IsBooked = true
 	config.DB.Save(&seat)
 
-	booking := models.Booking{UserID: input.UserID, SeatID: input.SeatID}
+	booking := models.Booking{UsersID: input.UsersID, SeatID: input.SeatID}
 	config.DB.Create(&booking)
 
 	// Optionally: Emit real-time update

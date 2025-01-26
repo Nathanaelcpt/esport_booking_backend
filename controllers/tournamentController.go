@@ -3,6 +3,7 @@ package controllers
 import (
 	"esport-booking-backend/config"
 	"esport-booking-backend/models"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -10,8 +11,11 @@ import (
 func GetTournaments(c *fiber.Ctx) error {
 	var tournaments []models.Tournament
 	if err := config.DB.Find(&tournaments).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not fetch tournaments"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not fetch tournaments", "details": err.Error()})
 	}
+
+	// Log the tournaments to verify the data format
+	fmt.Println(tournaments)
 
 	return c.JSON(tournaments)
 }

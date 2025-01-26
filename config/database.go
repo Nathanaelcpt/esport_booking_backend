@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -15,12 +14,11 @@ var DB *gorm.DB
 
 func ConnectDB() {
 	// Load the .env file
-	err := godotenv.Load() // Declare 'err' once
-	if err != nil {
-		log.Fatalf("Error loading .env file")
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: No .env file found. Ensure environment variables are set.")
 	}
 
-	// Buat DSN (Data Source Name) dari variabel .env
+	// Build the DSN (Data Source Name) from environment variables
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		os.Getenv("DB_HOST"),
@@ -30,11 +28,14 @@ func ConnectDB() {
 		os.Getenv("DB_PORT"),
 	)
 
-	// Hubungkan ke database
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{}) // Reuse the same 'err' variable
+	// Connect to the database
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
+
+	// Assign the db instance to the global variable
+	DB = db
 
 	log.Println("Database connected successfully!")
 }

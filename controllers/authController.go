@@ -9,33 +9,32 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
-	"golang.org/x/crypto/bcrypt"
 )
 
-func Register(c *fiber.Ctx) error {
-	type RegisterInput struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
+// RegisterUser handles user registration
+func RegisterUser(c *fiber.Ctx) error {
+	users := new(models.Users)
+	if err := c.BodyParser(users); err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Error parsing request body")
 	}
 
-	var input RegisterInput
-	if err := c.BodyParser(&input); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid input"})
+	// Cek apakah email sudah ada di database
+	if err := config.DB.Where("email = ?", users.Email).First(&models.Users{}).Error; err == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Email already exists"})
 	}
 
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(input.Password), 10)
-	user := models.User{Username: input.Username, Password: string(hashedPassword)}
-
-	if err := config.DB.Create(&user).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not create user"})
+	// Simpan pengguna baru tanpa hash password
+	if err := config.DB.Create(users).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error registering user")
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(user)
+	return c.Status(fiber.StatusOK).JSON(users)
 }
 
+// Login handles user login and returns a JWT token
 func Login(c *fiber.Ctx) error {
 	type LoginInput struct {
-		Username string `json:"username"`
+		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 
@@ -44,12 +43,14 @@ func Login(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid input"})
 	}
 
-	var user models.User
-	if err := config.DB.Where("username = ?", input.Username).First(&user).Error; err != nil {
+	var user models.Users
+	// Cek apakah email ada di database
+	if err := config.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
+	// Bandingkan password langsung tanpa hash
+	if user.Password != input.Password {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Incorrect password"})
 	}
 

@@ -9,7 +9,7 @@ import (
 
 func GetSeats(c *fiber.Ctx) error {
 	tournamentID := c.Params("tournament_id")
-
+	// Fetch seats based on the tournament ID
 	var seats []models.Seat
 	if err := config.DB.Where("tournament_id = ?", tournamentID).Find(&seats).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Could not fetch seats"})
